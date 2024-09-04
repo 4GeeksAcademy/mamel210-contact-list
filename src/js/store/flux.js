@@ -1,45 +1,80 @@
 const getState = ({ getStore, getActions, setStore }) => {
 	return {
-		store: {
-			demo: [
-				{
-					title: "FIRST",
-					background: "white",
-					initial: "white"
-				},
-				{
-					title: "SECOND",
-					background: "white",
-					initial: "white"
-				}
-			]
+	  store: {
+		contacts: [],
+	  },
+	  actions: {
+		getContacts: async () => {
+		  const host = 'https://playground.4geeks.com/contact';
+		  const agend = 'Mamel210';
+		  const uri = `${host}/agendas/${agend}/contacts`;
+		  const options = {
+			method: 'GET',
+		  };
+		  const response = await fetch(uri, options);
+		  const data = await response.json();
+		  setStore({ contacts: data.contacts });
 		},
-		actions: {
-			// Use getActions to call a function within a fuction
-			exampleFunction: () => {
-				getActions().changeColor(0, "green");
+		addContact: async (formdata) => {
+		  const host = 'https://playground.4geeks.com/contact';
+		  const agend = 'Mamel210';
+		  const uri = `${host}/agendas/${agend}/contacts`;
+		  const options = {
+			method: 'POST',
+			headers: {
+			  'Content-Type': 'application/json',
 			},
-			loadSomeData: () => {
-				/**
-					fetch().then().then(data => setStore({ "foo": data.bar }))
-				*/
+			body: JSON.stringify(formdata),
+		  };
+		  const response = await fetch(uri, options);
+		  const newContact = await response.json();
+		  const oldData = getStore();
+		  setStore({ contacts: [...oldData.contacts, newContact] });
+		},
+		editContact: async (formdata) => {
+		  const data = getStore();
+		  const currentId = data.currentContact.id;
+		  const host = 'https://playground.4geeks.com/contact';
+		  const agend = 'Mamel210';
+		  const uri = `${host}/agendas/${agend}/contacts/${currentId}`;
+		  const options = {
+			method: 'PUT',
+			headers: {
+			  'Content-Type': 'application/json',
 			},
-			changeColor: (index, color) => {
-				//get the store
-				const store = getStore();
-
-				//we have to loop the entire demo array to look for the respective index
-				//and change its color
-				const demo = store.demo.map((elm, i) => {
-					if (i === index) elm.background = color;
-					return elm;
-				});
-
-				//reset the global store
-				setStore({ demo: demo });
-			}
-		}
+			body: JSON.stringify(formdata),
+		  };
+		  const response = await fetch(uri, options);
+		  const editedContact = await response.json();
+		  const contactToEdit = data.contacts.map((contact) => {
+			return contact.id === editedContact.id ? editedContact : contact;
+		  });
+  
+		  setStore({ contacts: contactToEdit });
+		},
+		currentContact: (contact) => {
+		  setStore({ currentContact: contact });
+		},
+		deleteContact: async (contact) => {
+		  const data = getStore();
+		  const host = 'https://playground.4geeks.com/contact';
+		  const agend = 'Mamel210';
+		  const uri = `${host}/agendas/${agend}/contacts/${contact.id}`;
+		  const options = {
+			method: 'DELETE',
+		  };
+  
+		  const response = await fetch(uri, options);
+		  const remainContacts = data.contacts.filter(
+			(value) => value.id !== contact.id
+		  );
+  
+		  setStore({ contacts: remainContacts });
+		  return response;
+		},
+	  },
 	};
-};
-
-export default getState;
+  };
+  
+  export default getState;
+  
